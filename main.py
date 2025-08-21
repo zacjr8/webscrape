@@ -1,33 +1,37 @@
 import requests
 from bs4 import BeautifulSoup
 
-# Send a GET request to the job website
-url = "https://example.com/jobs"  # Replace with the URL of the job website
-response = requests.get(url)
+# Example: search results page for "laptop" on Amazon
+URL = "https://www.amazon.com/s?k=laptop"
 
-# Parse the HTML content using BeautifulSoup
+# Adding headers to mimic a real browser (important for Amazon)
+headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/114.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9"
+}
+
+# Send request
+response = requests.get(URL, headers=headers)
+
+# Parse HTML
 soup = BeautifulSoup(response.content, "html.parser")
 
-# Find the job elements on the page
-job_elements = soup.find_all("div", class_="job")
+# Find all product containers
+results = soup.find_all("div", {"data-component-type": "s-search-result"})
 
-# Extract the details from each job element
-for job_element in job_elements:
-    # Extract job title
-    title = job_element.find("h2").text.strip()
+# Loop through and extract title + price
+for item in results[:10]:  # limit to first 10 results
+    title = item.h2.text.strip() if item.h2 else "No title"
     
-    # Extract company name
-    company = job_element.find("span", class_="company").text.strip()
+    price_whole = item.find("span", class_="a-price-whole")
+    price_fraction = item.find("span", class_="a-price-fraction")
+    if price_whole and price_fraction:
+        price = price_whole.text + price_fraction.text
+    else:
+        price = "Not available"
     
-    # Extract location
-    location = job_element.find("span", class_="location").text.strip()
-    
-    # Extract job description
-    description = job_element.find("div", class_="description").text.strip()
-    
-    # Print the job details
-    print("Title:", title)
-    print("Company:", company)
-    print("Location:", location)
-    print("Description:", description)
-    print("--------------------")
+    print(f"Product: {title}")
+    print(f"Price: {price}")
+    print("-" * 40)
